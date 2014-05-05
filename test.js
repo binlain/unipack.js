@@ -63,7 +63,7 @@ test("volafile", ["Yjn4PfUM5CdlA","6a0120a85dcdae970b017615e00eec970c-800wi.png"
 test("complex", {
     number : 2342344.1234123,
     string : "thisisatest",
-    array : [324.1234, "test123", {th:34}],
+    array : [324.1234, "test123", {th:34, bool:true, bool2:false, n:-123948.41234}],
 });
 
 console.log("All tests took", Date.now() - date);
