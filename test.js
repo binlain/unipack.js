@@ -28,6 +28,12 @@ test("small fraction2", 0.000000000000000000023452345);
 test("big fraction1", 74089217340987234.000000000000000000023452345);
 test("big fraction2", 7408921734098723474823.00000000000000000000432023452345);
 
+test("NaN", NaN);
+test("1", 1);
+test("10", 10);
+test("100", 100);
+test("100", -100);
+
 test("small number1", 734);
 test("small number2", 5629499131288);
 test("small number3", -56294991288);
@@ -138,5 +144,3 @@ for(var i=0; i<10; i++){
     var result = JSON.stringify(object);
     console.log("JSON:", Date.now()-start);
 }
-
-console.log(object);

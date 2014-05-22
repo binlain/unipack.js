@@ -9,6 +9,8 @@
     var _mapSingle = new Array(58);
     var _mapDouble = new Array(58);
 
+    var cur = 0;
+
     for(var i=0; i<10; i++){
         _mapToEnd[i+48] = String.fromCharCode(i+110);
     }
@@ -34,14 +36,14 @@
 
         var i = 0;
         while(true){
-            c1 = c2;
-            c2 = string.charCodeAt(i+1);
-            i++;
-
-            if(!c1){
+            if(!c2){
                 result += _end;
                 break;
             }
+
+            c1 = c2;
+            c2 = string.charCodeAt(i+1);
+            i++;
 
             //plus sign, ignore
             if(c1 === 43) continue;
@@ -78,13 +80,13 @@
         return result;
     }
     
-    function unpackNumber(string, iter){
+    function unpackNumber(string){
         var result = '';
         var length = string.length;
 
-        while(iter.cur < length){
-            var c = string.charCodeAt(iter.cur);
-            iter.cur++;
+        while(cur < length){
+            var c = string.charCodeAt(cur);
+            cur++;
             
             if(c < 10){ //double number less than 10
                 result += '0'+c;
@@ -127,8 +129,8 @@
         return parseFloat(result);
     }
 
-    var TYPE_UNDEFINED = 0;
-    var TYPE_BOOL = 1;
+    var TYPE_SPECIAL = 0;
+    var TYPE_UNUSED = 1;
     var TYPE_NUMBER = 2;
     var TYPE_NUMBER_SHORT = 3; //Less than 562949953421312 (can safely be multiplied by 8) and not fraction
     var TYPE_NUMBER_SHORT_NEG = 4;
@@ -141,6 +143,9 @@
         var result, length, abs;
 
         if(type === 'number'){
+            if(isNaN(object)){
+                return packNumber(TYPE_SPECIAL + 24);
+            }
             if(object % 1 === 0){
                 abs = Math.abs(object);
                 if(abs < 562949953421312){
@@ -152,9 +157,9 @@
         
         if(type === 'boolean'){
             if(object){
-                return packNumber(TYPE_BOOL + 8);
+                return packNumber(TYPE_SPECIAL + 8);
             }
-            return packNumber(TYPE_BOOL);
+            return packNumber(TYPE_SPECIAL + 16);
         }
 
         if(type === 'string'){
@@ -164,7 +169,10 @@
         if(type === 'object'){
             if(object instanceof Array){
                 length = object.length;
-                result = object.reduce(encodeMapReduce, packNumber(TYPE_ARRAY + length * 8));
+                result = packNumber(TYPE_ARRAY + length * 8);
+                for(var i=0; i<length; i++){
+                    result += encode(object[i]);
+                }
                 return result;
             }
 
@@ -179,20 +187,20 @@
             return packNumber(TYPE_OBJECT + length * 8) + result;
         }
 
-        return packNumber(TYPE_UNDEFINED);
+        return packNumber(TYPE_SPECIAL);
 
     }
 
-    function encodeMapReduce(a, b){
-        return a + encode(b);
-    }
-
-    function decode(string, iter){
-        var _typeNum = unpackNumber(string, iter);
+    function decode(string){
+        var _typeNum = unpackNumber(string);
         var typeNum = _typeNum % 8;
         
-        if(typeNum === TYPE_UNDEFINED){
-            return;
+        if(typeNum === TYPE_SPECIAL){
+            var type_num = (_typeNum - typeNum)/8;
+            if(type_num === 1) return true;
+            if(type_num === 2) return false;
+            if(type_num === 3) return NaN;
+            return; //type_num === 0
         }
         
         if(typeNum === TYPE_NUMBER_SHORT){
@@ -204,19 +212,15 @@
         }
         
         if(typeNum === TYPE_NUMBER){
-            return unpackNumber(string, iter);
+            return unpackNumber(string);
         }
         
-        if(typeNum === TYPE_BOOL){
-            return (_typeNum - typeNum) === 8;
-        }
-
         var length = (_typeNum - typeNum)/8;
         
         if(typeNum === TYPE_STRING){
-            var start = iter.cur;
-            iter.cur += length;
-            return string.slice(start, iter.cur);
+            var old = cur;
+            cur += length;
+            return string.slice(old, cur);
         }
 
         var i;
@@ -226,7 +230,7 @@
             length = (_typeNum - typeNum)/8;
             object = [];
             for(i=0; i<length; i++){
-                object.push(decode(string, iter));
+                object.push(decode(string));
             }
             return object;
         }
@@ -235,15 +239,18 @@
             length = (_typeNum - typeNum)/8;
             object = {};
             for(i=0; i<length; i++){
-                object[decode(string, iter)] = decode(string, iter);
+                object[decode(string)] = decode(string);
             }
             return object;
         }
     }
 
-    global.unipackEncode = encode;
+    global.unipackEncode = function(object){
+        return encode(object);
+    };
     global.unipackDecode = function(string){
-        return decode(string, {cur:0});
+        cur = 0;
+        return decode(string);
     };
 
 
