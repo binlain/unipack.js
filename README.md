@@ -3,7 +3,7 @@ unipack.js
 
 JavaScript alternative to msgpack that is unicode compatible, ~30% smaller than JSON, but about 2x slower
 
-I have never used this in production, but it comes with some tests.
+I have never used this in anything but NodeJS, but it doesn't use any overly exotic JavaScript.
 
 It compresses numbers about 35% better than JSON, strings 1% and everything
 else by almost 100% (undefined, true, false, objects, arrays).
