@@ -13,3 +13,6 @@ It runs about 2x - 1.5x slower than native JSON (on nodejs).
 ####Why does it compress the string representation of the number instead of the number itself?
 
 Due to the way JavaScript handles numbers I found this to be the best compromise between speed and minification.
+
+####Should I use this in production
+No, you shouldn't
